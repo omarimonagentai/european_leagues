@@ -1,0 +1,36 @@
+name: Actualitzar classificacions
+
+on:
+  schedule:
+    - cron: '0 7 * * *'   # cada dia a les 7:00 UTC (9h hora catalana)
+  workflow_dispatch:        # permet executar-lo manualment des de GitHub
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write       # necessari per fer push
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Instal·lar dependències
+        run: pip install requests
+
+      - name: Actualitzar HTML
+        env:
+          FOOTBALL_API_KEY: ${{ secrets.FOOTBALL_API_KEY }}
+        run: python actualitzar_lligues.py
+
+      - name: Commit i push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add lligues_europees.html
+          git diff --cached --quiet || git commit -m "🤖 Classificacions actualitzades $(date +'%d/%m/%Y %H:%M')"
+          git push
